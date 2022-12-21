@@ -18,55 +18,61 @@ class DialView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
+
 ) : View(context, attrs, defStyleAttr) {
+
+    private var diagramData = mutableListOf<DiagramData>()
 
     private var radius = 0.0f
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL_AND_STROKE
         textAlign = Paint.Align.CENTER
-        textSize = 55.0f
+        textSize = 40.0f
         typeface = Typeface.create("", Typeface.BOLD)
+    }
+
+    fun init(diagramData: MutableList<DiagramData>)
+    {
+        this.diagramData = diagramData
+        invalidate()
     }
 
     override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
         radius = (min(width, height) / 2.0 * 0.8).toFloat()
     }
 
-    var numbers = mutableListOf<Int>()
+    var numbers = mutableListOf<DiagramData>()
     var list1 = mutableListOf<Double>()
 
-    fun generate()
-    {
-        invalidate()
-    }
+    var sum2 = 0.0
 
-    private fun dialSum()
+    private fun dialSum(length: Int, list2: MutableList<DiagramData> )
     {
         numbers.clear()
         list1.clear()
 
         var sum: Double = 0.0
+
         var result: Double = 0.0
 
-        var lenght = (2 .. 10).random()
-
-        for(i in 0..lenght)
+        for(i in list2)
         {
-            var value = (0..100).random()
-            numbers.add(value)
+            numbers.add(i)
         }
 
         for (i in numbers)
         {
-            sum += i.toDouble()
+            sum += i.value
         }
 
         for (i in numbers)
         {
-            result = (i.toDouble() / sum) * 360
+            result = (i.value / sum) * 360
             list1.add(result)
         }
+        sum2 = sum
+
     }
 
     private val colors = arrayOf(
@@ -84,46 +90,60 @@ class DialView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         var lastPoint: Float = 0.0f
-        dialSum()
-
-        var max = list1.max()
-        for (i in list1)
+        if(diagramData.size != 0)
         {
-            var l = 50f
-            var r = 550f
-            var b = 550f
-            var t = 50f
+            dialSum(diagramData.size, diagramData)
 
-            if(i == max)
+            var max = list1.max()
+            var textPosition = 100f
+
+            for (i in list1.indices)
             {
-                if(lastPoint > 90)
+                var l = 50f
+                var r = 550f
+                var b = 550f
+                var t = 50f
+
+                if(list1[i] == max)
                 {
-                    l -= 40f
-                    b -= 40f
+                    if(lastPoint > 90)
+                    {
+                        l -= 40f
+                        b -= 40f
+                    }
+                    if(lastPoint > 180)
+                    {
+                        l -= 40f
+                        t -= 40f
+                    }
+                    if(lastPoint > 270)
+                    {
+                        r += 40f
+                        t -= 40f
+                    }
+                    else
+                    {
+                        r += 40f
+                        b += 40f
+                    }
                 }
-                if(lastPoint > 180)
-                {
-                    l -= 40f
-                    t -= 40f
-                }
-                if(lastPoint > 270)
-                {
-                    r += 40f
-                    t -= 40f
-                }
-                else
-                {
-                    r += 40f
-                    b += 40f
-                }
+
+                paint.color = colors.random()
+
+                canvas.drawArc(l, t, r, b, lastPoint,
+                    list1[i].toFloat(),true, paint)
+
+                lastPoint += list1[i].toFloat()
+
+                var printText = diagramData[i].text + " - " + (diagramData[i].value / sum2 * 100).toInt().toString()+ "%"
+
+                canvas.drawText(printText,700f, textPosition, paint)
+                textPosition += 100f
+
             }
-
-            paint.color = colors.random()
-
-            canvas.drawArc(l, t, r, b, lastPoint,
-                i.toFloat(),true, paint)
-
-            lastPoint += i.toFloat()
+            paint.color = Color.WHITE
+            canvas.drawCircle(300f,300f,100f, paint)
         }
+
     }
 }
